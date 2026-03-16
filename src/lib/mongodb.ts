@@ -3,23 +3,26 @@ import { MongoClient } from "mongodb"
 const uri = process.env.MONGODB_URI as string
 
 if (!uri) {
-  throw new Error("Please define the MONGODB_URI environment variable")
+  throw new Error("MONGODB_URI missing")
 }
-
-const options = {}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
-declare global {
-  var _mongoClientPromise: Promise<MongoClient> | undefined
-}
+if (process.env.NODE_ENV === "development") {
+  const globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>
+  }
 
-if (!global._mongoClientPromise) {
-  client = new MongoClient(uri, options)
-  global._mongoClientPromise = client.connect()
-}
+  if (!globalWithMongo._mongoClientPromise) {
+    client = new MongoClient(uri)
+    globalWithMongo._mongoClientPromise = client.connect()
+  }
 
-clientPromise = global._mongoClientPromise
+  clientPromise = globalWithMongo._mongoClientPromise
+} else {
+  client = new MongoClient(uri)
+  clientPromise = client.connect()
+}
 
 export default clientPromise
