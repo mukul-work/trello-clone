@@ -5,7 +5,11 @@ import { Board } from "@/types";
 export async function createBoard(data: Board) {
   const boards = await getBoardCollection();
 
-  const { _id: _ignoredId, createdAt: _ignoredCreatedAt, ...boardData } = data;
+  const boardData: Omit<Board, "_id" | "createdAt"> = {
+    title: data.title,
+    ownerId: data.ownerId,
+    members: data.members,
+  };
   const createdAt = new Date();
 
   const result = await boards.insertOne({

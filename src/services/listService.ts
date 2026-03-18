@@ -1,22 +1,19 @@
-import { ObjectId } from "mongodb"
-import { getListCollection } from "@/models/List"
+import { getListCollection } from "@/models/List";
+import { List } from "@/types";
 
-export async function createList(data: any) {
-  const lists = await getListCollection()
+export async function createList(data: Omit<List, "_id" | "createdAt">) {
+  const lists = await getListCollection();
 
   const result = await lists.insertOne({
     ...data,
     createdAt: new Date(),
-  })
+  });
 
-  return result
+  return result;
 }
 
 export async function getLists(boardId: string) {
-  const lists = await getListCollection()
+  const lists = await getListCollection();
 
-  return lists
-    .find({ boardId })
-    .sort({ order: 1 })
-    .toArray()
+  return lists.find({ boardId }).sort({ order: 1 }).toArray();
 }

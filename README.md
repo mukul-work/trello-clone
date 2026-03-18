@@ -40,6 +40,18 @@ If you use the auth helpers in `src/lib/auth.ts`, also set:
 JWT_SECRET=your_long_random_secret
 ```
 
+If you want NextAuth (Google + Credentials) authentication, also set:
+
+```bash
+NEXTAUTH_SECRET=your_long_random_secret
+# Optional but recommended in dev
+NEXTAUTH_URL=http://localhost:3000
+
+# Enable "Sign in with Google" (OAuth)
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+```
+
 Notes:
 
 - This repo's `.gitignore` ignores `.env*`. Do not commit secrets.
@@ -188,6 +200,7 @@ The app uses three MongoDB collections:
 - `boards`
 - `lists`
 - `cards`
+- `users`
 
 Logical shapes used by the app (from `src/types/index.ts`):
 
@@ -216,6 +229,17 @@ Logical shapes used by the app (from `src/types/index.ts`):
 - `order: number`
 - `createdAt?: Date`
 
+**User** (for auth)
+
+- `_id?: string`
+- `email: string`
+- `name?: string`
+- `image?: string`
+- `provider?: "credentials" | "google"`
+- `googleId?: string`
+- `passwordHash?: string` (only for credentials users)
+- `createdAt?: Date`
+
 Notes:
 
 - API responses are JSON; `Date` values serialize as ISO strings.
@@ -225,6 +249,9 @@ Notes:
 
 | Method | Route                    | Purpose                       |
 | ------ | ------------------------ | ----------------------------- |
+| POST   | `/api/auth/signup`       | Create a credentials user     |
+| POST   | `/api/auth/login`        | Login with email/password     |
+| GET    | `/api/auth/providers`    | List NextAuth providers       |
 | GET    | `/api/test-db`           | DB connectivity check         |
 | GET    | `/api/boards?userId=...` | List boards owned by a user   |
 | POST   | `/api/boards`            | Create a board                |
@@ -236,6 +263,75 @@ Notes:
 | DELETE | `/api/cards?id=...`      | Delete a card                 |
 
 ### Endpoint Details
+
+#### 0) Auth (Credentials + Google)
+
+This repo supports **two auth styles**:
+
+- **Simple JWT endpoints** for quick API testing: `POST /api/auth/signup`, `POST /api/auth/login`
+- **NextAuth** for session-based auth and Google OAuth: `/api/auth/*` (served by NextAuth)
+
+##### POST `/api/auth/signup`
+
+**Method**: `POST`  
+**Route**: `/api/auth/signup`
+
+**Body (JSON)**
+
+```json
+{
+  "email": "demo@example.com",
+  "password": "password123",
+  "name": "Demo User"
+}
+```
+
+**Sample response (200)**
+
+```json
+{
+  "user": {
+    "id": "65f0b6b3a2c1a0b1b6f1d999",
+    "email": "demo@example.com",
+    "name": "Demo User",
+    "provider": "credentials"
+  },
+  "token": "<jwt>"
+}
+```
+
+##### POST `/api/auth/login`
+
+**Method**: `POST`  
+**Route**: `/api/auth/login`
+
+**Body (JSON)**
+
+```json
+{
+  "email": "demo@example.com",
+  "password": "password123"
+}
+```
+
+**Sample response (200)**
+
+```json
+{
+  "user": {
+    "id": "65f0b6b3a2c1a0b1b6f1d999",
+    "email": "demo@example.com",
+    "name": "Demo User",
+    "provider": "credentials"
+  },
+  "token": "<jwt>"
+}
+```
+
+##### NextAuth helper routes
+
+- `GET /api/auth/providers` - lists configured providers (Credentials, and Google if env vars are set)
+- `GET /api/auth/signin/google` - starts the Google OAuth flow (open in a browser)
 
 #### 1) Test DB
 
@@ -498,6 +594,18 @@ curl -s "http://localhost:3000/api/boards?userId=user_123" | jq
 curl -s -X POST "http://localhost:3000/api/boards" \
 	-H "Content-Type: application/json" \
 	-d '{"title":"My Board","ownerId":"user_123","members":["user_123"]}' | jq
+
+# Auth (JWT endpoints)
+curl -s -X POST "http://localhost:3000/api/auth/signup" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"password123","name":"Demo"}' | jq
+
+curl -s -X POST "http://localhost:3000/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"password123"}' | jq
+
+# NextAuth providers (Google appears only if env vars are set)
+curl -s "http://localhost:3000/api/auth/providers" | jq
 ```
 
 ### Security Notes

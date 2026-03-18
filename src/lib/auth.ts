@@ -1,19 +1,22 @@
-import bcrypt from "bcrypt"
-import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET as string
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET missing. Set JWT_SECRET in .env.local");
+  }
+  return secret;
+}
 
 export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 10)
+  return bcrypt.hash(password, 10);
 }
 
-export async function comparePassword(
-  password: string,
-  hash: string
-) {
-  return bcrypt.compare(password, hash)
+export async function comparePassword(password: string, hash: string) {
+  return bcrypt.compare(password, hash);
 }
 
-export function generateToken(payload: any) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" })
+export function generateToken(payload: Record<string, unknown>) {
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
 }
