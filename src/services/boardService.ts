@@ -26,8 +26,8 @@ export async function getBoardsByUser(userId: string) {
   return boards.find({ ownerId: userId }).sort({ createdAt: -1 }).toArray();
 }
 
-export async function deleteBoard(boardId: string) {
-  const boards = await getBoardCollection();
+// export async function deleteBoard(boardId: string) {
+//   const boards = await getBoardCollection();
 
-  return boards.deleteOne({ _id: new ObjectId(boardId) });
-}
+//   return boards.deleteOne({ _id: new ObjectId(boardId) });
+// }
