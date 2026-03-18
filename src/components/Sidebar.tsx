@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, LayoutDashboard, ChevronRight, Menu, PanelLeftClose } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { Board } from "@/lib/mock-data";
 

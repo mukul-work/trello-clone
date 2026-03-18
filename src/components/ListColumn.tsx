@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Inbox, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Card } from "./Card";
 import { AddCardModal } from "./AddCardModal";
 import type { List, Card as CardType } from "@/lib/mock-data";

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ListColumn } from "./ListColumn";
 import { AddListButton } from "./AddListButton";
 import { LayoutDashboard, Plus, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import type { Board as BoardType, List } from "@/lib/mock-data";
 
 interface BoardProps {

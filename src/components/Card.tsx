@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Circle, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { Card as CardType } from "@/lib/mock-data";
 
