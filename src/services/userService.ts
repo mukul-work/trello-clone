@@ -1,169 +1,96 @@
-import { ObjectId } from "mongodb";
 import { getUserCollection } from "@/models/User";
-import { comparePassword, hashPassword } from "@/lib/auth";
+import { hashPassword, comparePassword } from "@/lib/auth";
 
-type AuthProvider = "credentials" | "google";
-
-export type PublicUser = {
-  id: string;
-  email: string;
-  name?: string;
-  image?: string;
-  provider?: AuthProvider;
-};
-
-type DbUser = {
-  _id: ObjectId;
-  email: string;
-  name?: string;
-  image?: string;
-  provider?: AuthProvider;
-  googleId?: string;
-  passwordHash?: string;
-  createdAt: Date;
-  updatedAt?: Date;
-};
-
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-function toPublicUser(user: DbUser): PublicUser {
-  return {
-    id: user._id.toString(),
-    email: user.email,
-    name: user.name,
-    image: user.image,
-    provider: user.provider,
-  };
-}
-
+// 🔹 Get user by email
 export async function getUserByEmail(email: string) {
   const users = await getUserCollection();
-  const normalizedEmail = normalizeEmail(email);
-
-  return users.findOne<DbUser>({ email: normalizedEmail });
+  return users.findOne({ email });
 }
 
-export async function createCredentialsUser(input: {
+// 🔹 Create user (signup)
+export async function createCredentialsUser(data: {
   email: string;
   password: string;
   name?: string;
 }) {
   const users = await getUserCollection();
 
-  const normalizedEmail = normalizeEmail(input.email);
-  const existing = await users.findOne<DbUser>({ email: normalizedEmail });
+  const existing = await users.findOne({ email: data.email });
   if (existing) {
-    return {
-      ok: false as const,
-      status: 409 as const,
-      error: "User already exists",
-    };
+    return { ok: false, error: "User already exists", status: 400 };
   }
 
-  const passwordHash = await hashPassword(input.password);
-  const createdAt = new Date();
+  const passwordHash = await hashPassword(data.password);
 
   const result = await users.insertOne({
-    email: normalizedEmail,
-    name: input.name,
-    provider: "credentials" satisfies AuthProvider,
+    email: data.email,
+    name: data.name,
     passwordHash,
-    createdAt,
+    provider: "credentials",
+    createdAt: new Date(),
   });
 
   return {
-    ok: true as const,
+    ok: true,
     user: {
       id: result.insertedId.toString(),
-      email: normalizedEmail,
-      name: input.name,
-      provider: "credentials" as const,
+      email: data.email,
+      name: data.name,
     },
   };
 }
 
-export async function verifyCredentials(input: {
+// 🔹 Verify login
+export async function verifyCredentials(data: {
   email: string;
   password: string;
 }) {
   const users = await getUserCollection();
-  const normalizedEmail = normalizeEmail(input.email);
 
-  const user = await users.findOne<DbUser>({ email: normalizedEmail });
+  const user = await users.findOne({ email: data.email });
+
   if (!user || !user.passwordHash) {
-    return {
-      ok: false as const,
-      status: 401 as const,
-      error: "Invalid credentials",
-    };
+    return { ok: false, error: "Invalid credentials", status: 401 };
   }
 
-  const isValid = await comparePassword(input.password, user.passwordHash);
+  const isValid = await comparePassword(data.password, user.passwordHash);
+
   if (!isValid) {
-    return {
-      ok: false as const,
-      status: 401 as const,
-      error: "Invalid credentials",
-    };
+    return { ok: false, error: "Invalid credentials", status: 401 };
   }
 
-  return { ok: true as const, user: toPublicUser(user) };
+  return {
+    ok: true,
+    user: {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      image: user.image,
+    },
+  };
 }
 
-export async function upsertGoogleUser(input: {
+// 🔹 Google login
+export async function upsertGoogleUser(data: {
   email: string;
   googleId: string;
   name?: string;
   image?: string;
 }) {
   const users = await getUserCollection();
-  const normalizedEmail = normalizeEmail(input.email);
 
-  const existing = await users.findOne<DbUser>({ email: normalizedEmail });
-  const now = new Date();
+  const existing = await users.findOne({ email: data.email });
 
-  if (existing) {
-    await users.updateOne(
-      { _id: existing._id },
-      {
-        $set: {
-          provider: "google" satisfies AuthProvider,
-          googleId: input.googleId,
-          name: input.name ?? existing.name,
-          image: input.image ?? existing.image,
-          updatedAt: now,
-        },
-      },
-    );
-
-    return toPublicUser({
-      ...existing,
-      provider: "google",
-      googleId: input.googleId,
-      name: input.name ?? existing.name,
-      image: input.image ?? existing.image,
-      updatedAt: now,
-    });
-  }
-
-  const createdAt = now;
+  if (existing) return existing;
 
   const result = await users.insertOne({
-    email: normalizedEmail,
-    provider: "google" satisfies AuthProvider,
-    googleId: input.googleId,
-    name: input.name,
-    image: input.image,
-    createdAt,
+    email: data.email,
+    googleId: data.googleId,
+    name: data.name,
+    image: data.image,
+    provider: "google",
+    createdAt: new Date(),
   });
 
-  return {
-    id: result.insertedId.toString(),
-    email: normalizedEmail,
-    provider: "google" as const,
-    name: input.name,
-    image: input.image,
-  };
+  return result;
 }

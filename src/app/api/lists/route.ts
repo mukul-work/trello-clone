@@ -1,20 +1,33 @@
-import { NextResponse } from "next/server"
-import { createList, getLists } from "@/services/listService"
+import { NextResponse } from "next/server";
+import { createList, getLists } from "@/services/listService";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url)
+  const session = await getServerSession(authOptions);
 
-  const boardId = searchParams.get("boardId")
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const lists = await getLists(boardId as string)
+  const { searchParams } = new URL(req.url);
+  const boardId = searchParams.get("boardId");
 
-  return NextResponse.json(lists)
+  const lists = await getLists(boardId as string);
+
+  return NextResponse.json(lists);
 }
 
 export async function POST(req: Request) {
-  const body = await req.json()
+  const session = await getServerSession(authOptions);
 
-  const list = await createList(body)
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  return NextResponse.json(list)
+  const body = await req.json();
+
+  const list = await createList(body);
+
+  return NextResponse.json(list);
 }
