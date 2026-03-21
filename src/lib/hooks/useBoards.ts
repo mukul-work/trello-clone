@@ -1,28 +1,13 @@
-"use client";
+import { useQuery } from "@tanstack/react-query";
+import { getBoards } from "@/lib/api/boards";
+import { useSession } from "next-auth/react";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getBoards, createBoard } from "@/lib/api/boards";
+export function useBoards() {
+  const { data: session } = useSession();
 
-export function useBoards(userId: string) {
-  const queryClient = useQueryClient();
-
-  // 🔹 Fetch boards
-  const query = useQuery({
-    queryKey: ["boards", userId],
-    queryFn: () => getBoards(userId),
+  return useQuery({
+    queryKey: ["boards", session?.user?.id],
+    queryFn: () => getBoards(session!.user!.id),
+    enabled: !!session?.user?.id,
   });
-
-  // 🔹 Create board mutation
-  const mutation = useMutation({
-    mutationFn: createBoard,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["boards", userId] });
-    },
-  });
-
-  return {
-    ...query,
-    createBoard: mutation.mutate,
-    creating: mutation.isPending,
-  };
 }
