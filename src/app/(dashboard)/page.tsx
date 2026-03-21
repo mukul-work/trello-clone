@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -8,18 +8,9 @@ export default function DashboardPage() {
   if (status === "loading") return <p>Loading...</p>;
 
   if (!session) {
-    return (
-      <div>
-        <p>Not logged in</p>
-        <button onClick={() => signIn()}>Login</button>
-      </div>
-    );
+    signIn(); // redirect to login
+    return null;
   }
 
-  return (
-    <div>
-      <p>Welcome {session.user?.email}</p>
-      <button onClick={() => signOut()}>Logout</button>
-    </div>
-  );
+  return <div>Dashboard</div>;
 }
