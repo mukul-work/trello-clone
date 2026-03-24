@@ -12,9 +12,17 @@ export default function Sidebar() {
   }, []);
 
   async function fetchBoards() {
-    const res = await fetch("/api/boards");
-    const data = await res.json();
-    setBoards(data);
+    try {
+      const res = await fetch("/api/boards");
+
+      if (res.ok){
+        const data = await res.json();
+        setBoards(data);
+      }
+    }
+    catch(error){
+      setBoards([]);
+    }
   }
 
   return (
